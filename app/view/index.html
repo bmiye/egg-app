@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="utf-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Page Title</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="/public/layui/css/layui.css">
+        <style>
+            .layui-layer-btn .layui-layer-btn0 {
+                border: 1px solid #dedede!important;
+                background-color: #fff !important;
+                color: #000 !important;
+            }
+
+            .layui-layer-btn .layui-layer-btn1 {
+                background-color: #1E9FFF !important;
+                color: #fff !important;
+            }
+        </style>
+    </head>
+
+    <body>
+        <table class="layui-hide" id="user" lay-filter="user"></table>
+        <script type="text/html" id="toolbarDemo">
+            <div class="layui-btn-container">
+                <button class="layui-btn layui-btn-sm" lay-event="add">增加</button>
+                <!-- <button class="layui-btn layui-btn-sm" lay-event="getCheckLength">获取选中数目</button>
+                <button class="layui-btn layui-btn-sm" lay-event="isAll">验证是否全选</button> -->
+            </div>
+        </script>
+
+        <script type="text/html" id="barDemo">
+            <!-- <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a> -->
+            <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+        </script>
+    </body>
+    <script src="/public/layui/layui.js"></script>
+    <script>
+        layui.use(['table', 'jquery'], function () {
+            var table = layui.table,
+                $ = layui.jquery;
+
+            table.render({
+                elem: '#user',
+                url: '/users',
+                toolbar: '#toolbarDemo',
+                title: '用户数据表',
+                request: {
+                    pageName: 'pageNum', //页码的参数名称，默认：page
+                    limitName: 'pageSize' //每页数据量的参数名，默认：limit
+                },
+                response: {
+                    status: 'code',
+                    countName: 'count', //规定数据总数的字段名称，默认：count
+                    dataName: 'data', //规定数据列表的字段名称，默认：data
+                },
+                height: 'full-300',
+                cols: [
+                    [{
+                        type: 'checkbox',
+                        fixed: 'left'
+                    }, {
+                        field: 'id',
+                        title: 'ID',
+                        width: 80,
+                        fixed: 'left',
+                        unresize: true,
+                        sort: true
+                    }, {
+                        field: 'name',
+                        title: '用户名',
+                        edit: 'text',
+                        edit: 'text'
+                    }, {
+                        field: 'age',
+                        title: '年龄',
+                        edit: 'text',
+                        edit: 'text'
+                    }, {
+                        field: 'sex',
+                        title: '性别',
+                        edit: 'text',
+                        width: 80,
+                        edit: 'text',
+                        sort: true,
+                        templet: function (d) {
+                            if (d.sex == 0) {
+                                return '女'
+                            } else {
+                                return '男'
+                            }
+                        }
+                    }, {
+                        fixed: 'right',
+                        align: 'center',
+                        title: '操作',
+                        toolbar: '#barDemo',
+                        width: 120
+                    }]
+                ],
+                page: true,
+                limits: [10, 20, 50, 100, 9999]
+            });
+
+            //头工具栏事件
+            table.on('toolbar(user)', function (obj) {
+                // var checkStatus = table.checkStatus(obj.config.id);
+                switch (obj.event) {
+                    case 'add':
+                        layer.open({
+                            title: '新增',
+                            type: 2,
+                            area: ['500px', '300px'],
+                            content: ['/new', 'no'],
+                            end: function () {
+                                table.reload('user')
+                            }
+                        });
+                        break;
+                        // case 'getCheckLength':
+                        //     var data = checkStatus.data;
+                        //     layer.msg('选中了：' + data.length + ' 个');
+                        //     break;
+                        // case 'isAll':
+                        //     layer.msg(checkStatus.isAll ? '全选' : '未全选');
+                        //     break;
+                };
+            });
+
+            // //监听行工具事件
+            table.on('tool(user)', function (obj) {
+                if (obj.event === 'del') {
+                    layer.confirm('真的删除行么', function (index) {
+                        $.ajax({
+                            type: "DELETE",
+                            url: "/users/:id",
+                            dataType: "json",
+                            data: {
+                                id: obj.data.id
+                            },
+                        }).done(function (res) {
+                            if (res.msg == '操作成功') {
+                                obj.del();
+                                layer.close(index);
+                                table.reload('user');
+                                parent.layer.msg(res.msg)
+                            } else {
+                                layer.close(index);
+                                table.reload('user')
+                                parent.layer.msg('操作失败')
+                            }
+                        });
+
+                    });
+                }
+            });
+
+            //监听单元格编辑
+            table.on('edit(user)', function (obj) {
+                var value = obj.value,
+                    data = obj.data,
+                    field = obj.field;
+                $.ajax({
+                        type: "PUT",
+                        url: "/users/:id",
+                        data: {
+                            id: obj.data.id,
+                            name: obj.data.name,
+                            age: obj.data.age,
+                            sex: obj.data.sex
+                        },
+                        dataType: "json",
+                    })
+                    .done(function (res) {
+                        if (res.msg == '操作成功') {
+                            table.reload('user');
+                            parent.layer.msg(res.msg)
+                        } else {
+                            table.reload('user')
+                            parent.layer.msg('操作失败')
+                        }
+                    });
+
+            });
+        });
+    </script>
+
+</html>
